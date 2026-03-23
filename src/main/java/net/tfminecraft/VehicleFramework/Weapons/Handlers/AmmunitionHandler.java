@@ -49,12 +49,15 @@ public class AmmunitionHandler {
 	private List<VectorBone> exitBones = new ArrayList<>();
 	
 	private List<State> reloadStates = new ArrayList<>();
+
+	private int delay;
 	
 	@SuppressWarnings("unchecked")
 	public AmmunitionHandler(ConfigurationSection config) {
 		acceptedAmmunition = (List<String>) config.getList("accepted-ammunition", new ArrayList<String>());
 		baseReloadTime = config.getInt("reload-time", 4);
 		cooldown = config.getInt("cooldown", 10);
+		delay = config.getInt("delay", 0);
 		if(config.contains("reload-states")) {
 			for(String s : config.getStringList("reload-states")) {
 				try {
@@ -223,9 +226,20 @@ public class AmmunitionHandler {
 			w.getAnimationHandler().animate(Animation.SHOOT);
 		}
 		VectorBone bone = exitBones.get(currentBone);
-        projectileShooter.shoot(nearby, v.getEntity(), bone.getBaseLocation(), bone.getVector(), ammo, w);
-        particle(bone);
-        playSound(bone, SoundArg.SHOOT);
+        if(delay > 0) {
+			new BukkitRunnable() {
+				@Override
+		        public void run() {
+		        	projectileShooter.shoot(nearby, v.getEntity(), bone.getBaseLocation(), bone.getVector(), ammo, w);
+					particle(bone);
+					playSound(bone, SoundArg.SHOOT);
+		        }	       
+			}.runTaskLater(VehicleFramework.plugin, delay*1L);
+		} else {
+			projectileShooter.shoot(nearby, v.getEntity(), bone.getBaseLocation(), bone.getVector(), ammo, w);
+			particle(bone);
+			playSound(bone, SoundArg.SHOOT);
+		}
         if(exitBones.size() > 1) currentBone++;
 	}
 	private void decrease() {
@@ -244,9 +258,9 @@ public class AmmunitionHandler {
 		if(activeCooldown > System.currentTimeMillis()) {
 			return;
 		}
-		activeCooldown = System.currentTimeMillis()+cooldown*50;
+		activeCooldown = System.currentTimeMillis()+cooldown+delay*50;
 		shootProjectiles(nearby);
-		decrease();
+		if(count > 0) decrease();
 	}
 	
 }

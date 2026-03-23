@@ -73,7 +73,7 @@ public class BulletShooter implements Shooter {
 
 	    for (Entity entity : particle.getWorld().getNearbyEntities(particle, 0.5, 0.5, 0.5)) {
 	        if (entity instanceof LivingEntity) {
-	            if (b.isExplosive()) {
+	            if (b.getData().isExplosive()) {
 	                triggerExplosionIfExplosive(particle, b);
 	            } else {
 	                ExplosionCreator.applyDamage(entity, ammoData.getDamage(), ammoData.getDamageType());
@@ -85,7 +85,7 @@ public class BulletShooter implements Shooter {
 	}
 
 	private void triggerExplosionIfExplosive(Location loc, Bullet b) {
-	    if (b.isExplosive()) {
+	    if (b.getData().isExplosive()) {
 			loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 8, 1);
 	        ExplosionCreator.triggerExplosion(loc, b.getData().getYield(), b.getData().getRadius(), b.getData().getDamage(), b.getData().getDamageType());
 	    }

@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Levelled;
+import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -75,8 +76,42 @@ public class ProjectileShooter implements Shooter {
 		}.runTaskTimer(VehicleFramework.plugin, 0L, 1L);
 	}
 	
-	public void triggerExplosion(Location explosionCenter, AmmunitionData a) {
-		explosionCenter.getWorld().playSound(explosionCenter, Sound.ENTITY_GENERIC_EXPLODE, 8, 1);
-	    ExplosionCreator.triggerExplosion(explosionCenter, a.getYield(), a.getRadius(), a.getDamage(), a.getDamageType());
+	public void triggerExplosion(List<Player> players, Location explosionCenter, AmmunitionData a) {
+		if (a.isExplosive()) {
+			explosionCenter.getWorld().playSound(explosionCenter, Sound.ENTITY_GENERIC_EXPLODE, 8, 1);
+	    	ExplosionCreator.triggerExplosion(
+	    			explosionCenter,
+	    			a.getYield(),
+	    			a.getRadius(),
+	    			a.getDamage(),
+	    			a.getDamageType(),
+	    			a.isFire()
+	    	);
+		}
+
+		if (!a.getPotionEffects().isEmpty()) {
+			for (AmmunitionData.LingeringCloudData cloudData : a.getLingeringClouds()) {
+				spawnLingeringCloud(explosionCenter, cloudData, a.getRadius());
+			}
+		}
+
+		a.hitFX(players, explosionCenter, 1f);
+	}
+
+	private void spawnLingeringCloud(Location loc, AmmunitionData.LingeringCloudData data, int radius) {
+		AreaEffectCloud cloud = loc.getWorld().spawn(loc, AreaEffectCloud.class);
+
+		cloud.setRadius(Math.max(1.5f, radius / 2.0f));
+		cloud.setDuration(data.getCloudDurationTicks());
+		cloud.setColor(data.getColor());
+		cloud.setWaitTime(0);
+		cloud.setReapplicationDelay(20);
+
+		// Optional: slowly shrink over lifetime
+		float startRadius = Math.max(1.5f, radius / 2.0f);
+		cloud.setRadius(startRadius);
+		cloud.setRadiusPerTick(-startRadius / Math.max(1, data.getCloudDurationTicks()));
+
+		cloud.addCustomEffect(data.getEffect(), true);
 	}
 }
