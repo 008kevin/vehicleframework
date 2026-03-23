@@ -6,6 +6,7 @@ import java.util.Set;
 
 import org.bukkit.configuration.ConfigurationSection;
 
+import net.tfminecraft.VehicleFramework.VFLogger;
 import net.tfminecraft.VehicleFramework.Data.ParticleData;
 
 public class ParticleLoader {
@@ -15,7 +16,12 @@ public class ParticleLoader {
 		List<String> list = new ArrayList<String>(set);
 		List<ParticleData> temp = new ArrayList<ParticleData>();
 		for(String key : list) {
-			temp.add(new ParticleData(config.getConfigurationSection(key)));
+			try {
+				temp.add(new ParticleData(config.getConfigurationSection(key)));
+			} catch (Exception e) {
+				e.printStackTrace();
+				VFLogger.log("Failed to load particle with key: " + key);
+			}
 		}
 		return temp;
 	}

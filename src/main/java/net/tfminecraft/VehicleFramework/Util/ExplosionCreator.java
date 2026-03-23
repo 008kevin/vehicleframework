@@ -29,7 +29,11 @@ import net.tfminecraft.VehicleFramework.Events.VFEntityDamageEvent;
 import net.tfminecraft.VehicleFramework.Events.VFExplosionEvent;
 
 public class ExplosionCreator {
+
 	public static void triggerExplosion(Location explosionCenter, double yield, double blastRadius, double damage, String cause) {
+		triggerExplosion(explosionCenter, yield, blastRadius, damage, cause, false);
+	}
+	public static void triggerExplosion(Location explosionCenter, double yield, double blastRadius, double damage, String cause, boolean fire) {
 		VFExplosionEvent event = new VFExplosionEvent(explosionCenter);
         Bukkit.getPluginManager().callEvent(event);
 
@@ -107,8 +111,9 @@ public class ExplosionCreator {
 			}
 		}
 
-
-
+		if (fire) {
+			igniteArea(explosionCenter, yield, blastRadius, random);
+		}
 
 	    // Spawn explosion effects and physical explosion
 	    final List<Player> players = new ArrayList<Player>();
@@ -268,4 +273,60 @@ public class ExplosionCreator {
 		}.runTaskTimer(VehicleFramework.plugin, 0L, 2L);
 	}
 
+	private static void igniteArea(Location explosionCenter, double yield, double blastRadius, Random random) {
+		int radius = (int) Math.ceil(blastRadius);
+		int centerY = explosionCenter.getBlockY();
+
+		// How far up/down from the explosion center to search for a solid block with air above it
+		int verticalSearch = Math.max(4, (int) Math.ceil(yield));
+
+		// Base chance at the center, scaled by yield but capped
+		double centerChance = Math.min(0.75, 0.12 + (yield * 0.06));
+
+		for (int x = -radius; x <= radius; x++) {
+			for (int z = -radius; z <= radius; z++) {
+				double distSq = (x * x) + (z * z);
+				if (distSq > blastRadius * blastRadius) continue;
+
+				double distance = Math.sqrt(distSq);
+				double distanceFactor = 1.0 - (distance / blastRadius); // 1.0 at center, 0.0 at edge
+				if (distanceFactor <= 0) continue;
+
+				// Higher chance near center, lower chance at edge
+				double igniteChance = centerChance * distanceFactor;
+
+				if (random.nextDouble() > igniteChance) continue;
+
+				Block groundBlock = null;
+
+				// Search downward first preference: closest valid surface near the explosion Y
+				for (int y = centerY + verticalSearch; y >= centerY - verticalSearch; y--) {
+					Block block = explosionCenter.getWorld().getBlockAt(
+						explosionCenter.getBlockX() + x,
+						y,
+						explosionCenter.getBlockZ() + z
+					);
+
+					Block above = block.getRelative(BlockFace.UP);
+
+					// Need a non-air support block with air above
+					if (!block.getType().isAir()
+							&& block.getType().isSolid()
+							&& above.getType() == Material.AIR) {
+						groundBlock = block;
+						break;
+					}
+				}
+
+				if (groundBlock == null) continue;
+
+				Block fireBlock = groundBlock.getRelative(BlockFace.UP);
+
+				// Avoid replacing anything except air
+				if (fireBlock.getType() != Material.AIR) continue;
+
+				fireBlock.setType(Material.FIRE);
+			}
+		}
+	}
 }

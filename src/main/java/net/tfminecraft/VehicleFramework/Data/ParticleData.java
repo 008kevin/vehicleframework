@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import net.tfminecraft.VehicleFramework.VFLogger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -19,10 +20,12 @@ public class ParticleData {
 	private double z;
 	
 	public ParticleData(ConfigurationSection config) {
-		if(Particle.valueOf(config.getString("particle", "FLAME").toUpperCase()) == null) {
-			particle = Particle.FLAME;
-		} else {
+		try {
 			particle = Particle.valueOf(config.getString("particle", "FLAME").toUpperCase());
+		} catch (Exception e) {
+			// TODO: handle exception
+			particle = Particle.FLAME;
+			VFLogger.log("Invalid particle type: " + config.getString("particle", "FLAME") + ". Defaulting to FLAME.");
 		}
 		amount = config.getInt("amount", 20);
 		spread = config.getDouble("spread", 0.2);

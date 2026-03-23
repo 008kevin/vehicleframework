@@ -61,7 +61,7 @@ public class DefaultShooter implements Shooter {
 
 	            // Check if the projectile has hit something or reached the ground
 	            if (i > 5 && (checker.hasHit(e, projectiles) || e.isOnGround() || e.isDead())) {
-	                shooter.triggerExplosion(e.getLocation(), a.getData());
+	                shooter.triggerExplosion(players, e.getLocation(), ammoData);
 	                e.remove();
 	                projectiles.remove(e);
 					Cache.projectiles.remove(e);
@@ -85,7 +85,7 @@ public class DefaultShooter implements Shooter {
 	            		for(Player p : players) {
 	        				p.spawnParticle(Particle.EXPLOSION_HUGE, e.getLocation(), (int) Math.round(a.getData().getYield()*15), 0, 0, 0, 0);
 	        			}
-						shooter.triggerExplosion(e.getLocation(), ammoData);
+						shooter.triggerExplosion(players, e.getLocation(), ammoData);
 	            		sendCluster(e.getLocation(), c, players, projectiles);
 	            		e.remove();
 		                projectiles.remove(e);
@@ -117,7 +117,7 @@ public class DefaultShooter implements Shooter {
 	        	int i = 5;
 	            public void run() {
 	                if (i > 5 && checker.hasHit(armorStand, projectiles) || armorStand.isOnGround() || armorStand.isDead()) {
-	                    shooter.triggerExplosion(armorStand.getLocation(), a.getClusterData()); // Adjust ammunition if needed
+	                    shooter.triggerExplosion(players, armorStand.getLocation(), a.getClusterData()); // Adjust ammunition if needed
 	                    armorStand.remove();
 						Cache.projectiles.remove(armorStand);
 	                    cancel();
