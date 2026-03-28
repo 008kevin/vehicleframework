@@ -352,6 +352,9 @@ public class ActiveVehicle {
 		initializeContainers(inc.getContainers());
 		name = inc.getName();
 		uuid = inc.getUUID();
+		ownerData.setOwner(inc.getOwner());
+		ownerData.setWhiteListed(inc.isWhitelisted());
+		ownerData.setWhiteList(inc.getWhitelist());
 		setFuel(inc.getFuel());
 		if(!changeSkin(inc.getSkin(), true)) {
 			VFLogger.log("could not apply skin "+inc.getSkin()+" to "+id);
