@@ -3,6 +3,8 @@ package net.tfminecraft.VehicleFramework.Data;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.tfminecraft.VehicleFramework.Cache.Cache;
+
 public class OwnerData {
     private String owner;
     private List<String> whiteList = new ArrayList<>();
@@ -10,6 +12,7 @@ public class OwnerData {
 
     public OwnerData() {
         owner = "none";
+        whiteListed = Cache.allowWhitelist && Cache.whitelistedByDefault;
     }
 
     // Owner

@@ -73,5 +73,6 @@ public class ConfigLoader {
 
 		Cache.mythicMob = config.getString("mythicmob", "none");
 		Cache.allowWhitelist = config.getBoolean("allow-whitelist", false);
+		Cache.whitelistedByDefault = config.getBoolean("whitelisted-by-default", false);
 	}
 }
