@@ -14,6 +14,7 @@ import org.bukkit.persistence.PersistentDataType;
 import net.tfminecraft.VehicleFramework.Enums.VFGUI;
 import net.tfminecraft.VehicleFramework.Managers.Inventory.VFInventoryHolder;
 import net.tfminecraft.VehicleFramework.VehicleFramework;
+import net.tfminecraft.VehicleFramework.Cache.Cache;
 import net.tfminecraft.VehicleFramework.Vehicles.ActiveVehicle;
 
 public class OwnershipGUIManager {
@@ -29,9 +30,9 @@ public class OwnershipGUIManager {
         // Slot 0 – Toggle whitelisting
         i.setItem(0, createToggleWhitelistButton(v.getOwnerData().isWhiteListed()));
         // Slot 2 – Add player to whitelist
-        i.setItem(2, createAddToWhitelistButton());
+        if(Cache.allowWhitelist) i.setItem(2, createAddToWhitelistButton());
         // Slot 4 – View / manage whitelist
-        i.setItem(4, createViewWhitelistButton(v.getOwnerData().getWhiteList().size()));
+        if(Cache.allowWhitelist) i.setItem(4, createViewWhitelistButton(v.getOwnerData().getWhiteList().size()));
         // Slot 6 – Remove ownership
         i.setItem(6, createRemoveOwnershipButton());
 
