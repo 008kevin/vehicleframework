@@ -2,6 +2,7 @@ package net.tfminecraft.VehicleFramework;
 
 import java.io.File;
 
+import me.m56738.smoothcoasters.api.SmoothCoastersAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -37,7 +38,9 @@ public class VehicleFramework extends JavaPlugin{
 	private final VehicleLoader vehicleLoader = new VehicleLoader();
 	private final FuelLoader fuelLoader = new FuelLoader();
 	private final Database db = new Database();
-	
+
+	private static SmoothCoastersAPI smoothCoastersAPI;
+
 	@Override
 	public void onEnable() {
 		dirtyBit = db.isDirtyFlag();
@@ -129,9 +132,9 @@ public class VehicleFramework extends JavaPlugin{
 	}
 
 	public void setPlugins() {
-		Plugin plugin = getServer().getPluginManager().getPlugin("CoreProtect");
+		Plugin coreProtect = getServer().getPluginManager().getPlugin("CoreProtect");
 
-		if (plugin != null && plugin.isEnabled() && plugin instanceof CoreProtect) {
+		if (coreProtect != null && coreProtect.isEnabled() && coreProtect instanceof CoreProtect) {
 			Cache.coreProtect = true;
 			VFLogger.info("Detected CoreProtect, hooking on");
 		}
@@ -139,6 +142,7 @@ public class VehicleFramework extends JavaPlugin{
 			getServer().getPluginManager().registerEvents(new MythicMobsIntegration(), this);
 			VFLogger.info("MythicMobs integration enabled.");
 		}
+		smoothCoastersAPI = new SmoothCoastersAPI(this);
 	}
 
 	public static CoreProtectAPI getCoreProtect() {
@@ -161,6 +165,10 @@ public class VehicleFramework extends JavaPlugin{
         }
 
         return CoreProtect;
+	}
+
+	public static SmoothCoastersAPI getSmoothCoastersAPI() {
+		return smoothCoastersAPI;
 	}
 
 	public static VehicleFramework getInstance() {

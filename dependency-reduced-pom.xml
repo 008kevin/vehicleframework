@@ -64,6 +64,10 @@
       <name>Lumine Releases</name>
       <url>https://mvn.lumine.io/repository/maven-public/</url>
     </repository>
+    <repository>
+      <id>mgdev-repo</id>
+      <url>https://ci.mg-dev.eu/plugin/repository/everything/</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>
