@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.lumine.mythic.bukkit.BukkitAdapter;
+import io.lumine.mythic.core.items.MythicItem;
+import io.lumine.mythiccrucible.api.MythicCrucible;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -507,6 +510,10 @@ public class VehicleManager implements Listener{
 		//Destroy
 		if(api.getChecker().checkItemWithPath(p.getInventory().getItemInMainHand(), Cache.destroyItem)) {
 			v.remove();
+			p.sendMessage(v.getModel().getBlueprint().getName());
+			MythicBukkit mc = MythicBukkit.inst();
+			MythicItem item = mc.getItemManager().getItem("vehicle_voucher").orElseThrow();
+			p.getInventory().addItem(BukkitAdapter.adapt(item.generateItemStack(1)));
 			p.sendMessage("§cRemoved");
 			return;
 		}
