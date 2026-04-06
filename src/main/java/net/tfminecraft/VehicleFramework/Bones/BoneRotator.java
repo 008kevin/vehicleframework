@@ -22,7 +22,7 @@ public class BoneRotator {
 	private double smoothY = 0f;
 	private double smoothZ = 0f;
 
-	private double yawOffset = 0f;
+	public double yawOffset = 0f;
 
 	private RotationLimits limits;
 	

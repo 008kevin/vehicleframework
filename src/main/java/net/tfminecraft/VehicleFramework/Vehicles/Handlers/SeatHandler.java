@@ -1,9 +1,11 @@
 package net.tfminecraft.VehicleFramework.Vehicles.Handlers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import me.m56738.smoothcoasters.api.SmoothCoastersAPI;
+import net.tfminecraft.VehicleFramework.Bones.BoneRotator;
+import net.tfminecraft.VehicleFramework.Bones.ConvertedAngle;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
@@ -17,16 +19,19 @@ import net.tfminecraft.VehicleFramework.Enums.SeatType;
 import net.tfminecraft.VehicleFramework.Vehicles.ActiveVehicle;
 import net.tfminecraft.VehicleFramework.Vehicles.Vehicle;
 import net.tfminecraft.VehicleFramework.Vehicles.Seat.Seat;
+import org.joml.Quaternionf;
 
 public class SeatHandler {
 	//Passengers and Seats
 	private MountManager manager;
 	
 	private List<Seat> seats = new ArrayList<>();
-	
+
 	private List<Entity> passengers = new ArrayList<>();
-	
+
 	private ActiveVehicle v;
+
+	private SmoothCoastersAPI sc = VehicleFramework.getSmoothCoastersAPI();
 
 	public SeatHandler(List<String> seats, Vehicle v) {
 		for(String seat : seats) {
@@ -67,8 +72,11 @@ public class SeatHandler {
 	}
 	public void addPassenger(Entity e, Seat seat) {
 		manager.mountPassenger(seat.getBone(), e, MountControllerTypes.WALKING);
-		if(seat.getType().equals(SeatType.CAPTAIN) && e instanceof Player) {
-			VehicleFramework.getLog().logEntry(((Player) e).getName()+" entered captain seat of "+v.getName()+" at "+e.getLocation().getX()+"x, "+e.getLocation().getZ()+"z");
+		if (e instanceof Player) {
+			sc.resetRotation(null, (Player) e);
+			if (seat.getType().equals(SeatType.CAPTAIN)) {
+				VehicleFramework.getLog().logEntry(((Player) e).getName() + " entered captain seat of " + v.getName() + " at " + e.getLocation().getX() + "x, " + e.getLocation().getZ() + "z");
+			}
 		}
 	    seat.mount(e);
 		if(!isPassenger(e)) passengers.add(e);
@@ -91,6 +99,7 @@ public class SeatHandler {
 				Player p = (Player) e;
 				v.getVehicleManager().dismount(p);
 				v.removeBoard(p);
+				sc.resetRotation(null, p);
 			}
 			resetSeat(e);
 		}
@@ -148,5 +157,55 @@ public class SeatHandler {
 				passengers.remove(e);
 			}
 		}
+	}
+
+	public void tick() {
+		for (Seat s : seats) {
+			updateSmoothCoasters(s, v);
+		}
+	}
+
+	private void updateSmoothCoasters(Seat s, ActiveVehicle v) {
+		if (s.isOccupied() && s.getEntity() instanceof Player p) {
+			BoneRotator rotator = v.getBehaviourHandler().getRotator();
+			if (rotator == null || rotator.getAnimator() == null) {
+				return;
+			}
+			Quaternionf currentRotation = rotator.getAnimator().getRotation();
+			ConvertedAngle angle = new ConvertedAngle(currentRotation);
+			float vehicleYaw = normalizeYaw(v.getEntity().getLocation().getYaw());
+			float vehicleYawRad = (float) Math.toRadians(vehicleYaw);
+
+			float pitch = angle.getPitch();
+			float roll = angle.getRoll();
+			float sin = (float) Math.sin(vehicleYawRad);
+			float cos = (float) Math.cos(vehicleYawRad);
+
+			// Rotate the pitch/roll vector into the vehicle's local frame so the
+			// axes stay correct for any heading, not only cardinal directions.
+			float correctedPitch = pitch * cos - roll * sin;
+			float correctedRoll = pitch * sin + roll * cos;
+
+			Quaternionf q = new Quaternionf().rotateYXZ(
+				(float) Math.toRadians(angle.getYaw()),
+				(float) Math.toRadians(correctedPitch),
+				(float) Math.toRadians(correctedRoll)
+			);
+
+			sc.setRotation(null, p, q.x, q.y, q.z, q.w, (byte) 3);
+			sc.setEntityRotation(null, p, s.getEntity().getEntityId(), q.x, q.y, q.z, q.w, (byte)3);
+			p.sendTitle("", "yaw: " + angle.getYaw() + " pitch: " + angle.getPitch() + " roll: " + angle.getRoll(), 0, 20, 0);
+		}
+	}
+
+	private float normalizeYaw(float yaw) {
+		yaw %= 360f;
+		if (yaw < -180f) {
+			yaw += 360f;
+		}
+		if (yaw > 180f) {
+			yaw -= 360f;
+		}
+		return yaw;
 	}
 }

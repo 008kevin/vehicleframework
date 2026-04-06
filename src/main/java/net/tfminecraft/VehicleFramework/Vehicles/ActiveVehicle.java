@@ -499,6 +499,7 @@ public class ActiveVehicle {
 	public void tick() {
 		behaviourHandler.tick(this);
 		stateHandler.tick();
+		seatHandler.tick();
 		if(hasTowHandler()) towHandler.tick();
 		if(hasUtilityHandler()) {
 			utilityHandler.tick(nearby);
