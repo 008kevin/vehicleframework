@@ -11,6 +11,7 @@ import java.util.Set;
 import io.lumine.mythic.bukkit.BukkitAdapter;
 import io.lumine.mythic.core.items.MythicItem;
 import io.lumine.mythiccrucible.api.MythicCrucible;
+import net.tfminecraft.VehicleFramework.Vehicles.Component.VehicleComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -33,11 +34,7 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -992,5 +989,29 @@ public class VehicleManager implements Listener{
 		}
 
 		return owned;
+	}
+
+	/**
+	 * Listener for when a player inside a vehicle gets teleported
+	 * If the player is in the cockpit, teleports the vehicle with, if
+	 * not, then cancels the event
+	 */
+	@EventHandler
+	public void onPlayerTeleportInVehicle(PlayerTeleportEvent e) {
+		Player p = e.getPlayer();
+		if (e.getTo() != null && isPassenger(p)) {
+			ActiveVehicle v = getByPassenger(p);
+			if (v.getSeat(p).getType() == SeatType.CAPTAIN) {
+				v.getEntity().teleport(e.getTo());
+				if (p.getName().equals("008kevin")) {
+					p.sendTitle("Teleported to:", e.getTo().toString());
+					p.sendMessage("Teleported to:", e.getTo().toString());
+					p.sendMessage("Currently at: " + v.getLocation());
+				}
+				v.slowTick();
+			} else {
+				e.setCancelled(true);
+			}
+		}
 	}
 }
