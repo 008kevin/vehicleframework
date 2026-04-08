@@ -114,6 +114,8 @@ public class VehicleMovementController implements MovementInterface{
 	}
 	
 	public void update(ActiveVehicle v) {
+		this.v = v;
+		this.e = v.getEntity();
 		rotator = v.getBehaviourHandler().getRotator();
 		vector = v.getBehaviourHandler().getVector();
 	}

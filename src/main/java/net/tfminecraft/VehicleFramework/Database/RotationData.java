@@ -10,6 +10,14 @@ public class RotationData {
     private float w;
     
 
+    public RotationData(String rotator, float x, float y, float z, float w) {
+        this.rotator = rotator;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.w = w;
+    }
+
     public RotationData(String rotator, JSONObject json) {
         this.rotator = rotator;
         this.x = ((Number) json.get("x")).floatValue();

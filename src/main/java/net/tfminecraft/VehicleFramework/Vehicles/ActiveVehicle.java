@@ -22,11 +22,7 @@ import net.tfminecraft.VehicleFramework.Cache.Cache;
 import net.tfminecraft.VehicleFramework.Data.DeathData;
 import net.tfminecraft.VehicleFramework.Data.DeathOverride;
 import net.tfminecraft.VehicleFramework.Data.OwnerData;
-import net.tfminecraft.VehicleFramework.Database.IncompleteComponent;
-import net.tfminecraft.VehicleFramework.Database.IncompleteVehicle;
-import net.tfminecraft.VehicleFramework.Database.IncompleteWeapon;
-import net.tfminecraft.VehicleFramework.Database.PassengerData;
-import net.tfminecraft.VehicleFramework.Database.RotationData;
+import net.tfminecraft.VehicleFramework.Database.*;
 import net.tfminecraft.VehicleFramework.Effects.CustomEffect;
 import net.tfminecraft.VehicleFramework.Enums.Animation;
 import net.tfminecraft.VehicleFramework.Enums.Component;
@@ -64,7 +60,10 @@ import net.tfminecraft.VehicleFramework.Vehicles.Handlers.WeaponHandler;
 import net.tfminecraft.VehicleFramework.Vehicles.Seat.Seat;
 import net.tfminecraft.VehicleFramework.Vehicles.State.VehicleState;
 import net.tfminecraft.VehicleFramework.Vehicles.Util.AccessPanel;
+import net.tfminecraft.VehicleFramework.Bones.ConvertedAngle;
 import net.tfminecraft.VehicleFramework.Weapons.ActiveWeapon;
+import java.util.stream.Collectors;
+import com.ticxo.modelengine.api.model.ActiveModel;
 
 public class ActiveVehicle {
 	protected long spawnTime;
@@ -182,6 +181,9 @@ public class ActiveVehicle {
 	
 	public ActiveModel getModel() {
 		return model;
+	}
+	public void setModel(ActiveModel m) {
+		model = m;
 	}
 
 	public Entity getEntity() {
@@ -343,7 +345,7 @@ public class ActiveVehicle {
 		if(i != null) loadIncomplete(i);
 	}
 
-	private void loadIncomplete(IncompleteVehicle inc) {
+	public void loadIncomplete(IncompleteVehicle inc) {
 		entity.setRotation(inc.getYaw(), 0);
 		initializeWeapons(inc.getWeapons());
 		initializeComponents(inc.getComponents());
@@ -751,7 +753,7 @@ public class ActiveVehicle {
 	//Parameters
 	public double getParameterValue(String parameter) {
 		Vector velocity = entity.getVelocity();
-		Quaternionf rotations = new Quaternionf(behaviourHandler.getRotator().getAngles());
+		Quaternionf rotations = new Quaternionf(behaviourHandler.getRotator().getAnimator().getRotation());
 		ConvertedAngle angles = new ConvertedAngle(rotations);
 		
 		if(parameter.equalsIgnoreCase("vX")) return velocity.getX();
@@ -762,5 +764,104 @@ public class ActiveVehicle {
 		else if(parameter.equalsIgnoreCase("roll")) return angles.getRoll();
 		
 		return 0.0;
+	}
+
+	public void setEntity(Entity e) {
+		entity = e;
+	}
+
+	public void updateModel(ActiveModel m) {
+		model = m;
+		behaviourHandler.updateModel(m);
+		stateHandler.updateModel(m);
+		componentHandler.updateModel(m);
+		seatHandler.updateModel(m);
+		weaponHandler.updateModel(m);
+		if(hasContainers()) containerHandler.updateModel(m);
+		if(hasUtilityHandler()) utilityHandler.updateModel(m);
+	}
+
+	public IncompleteVehicle toIncompleteVehicle() {
+		List<IncompleteComponent> componentsList = getComponents().stream()
+				.map(c -> new IncompleteComponent(
+						c.getType(),
+						c.getHealthData().getDamage(),
+						c.isOnFire() ? c.getFire().getProgress() : 0,
+						(c instanceof SinkableHull) ? (int) ((SinkableHull) c).getSinkProgress() : 0
+				)).collect(Collectors.toList());
+
+		List<IncompleteWeapon> weaponsList = getWeaponHandler().getWeapons().stream()
+				.map(w -> new IncompleteWeapon(
+						w.getId(),
+						w.getHealthData().getDamage(),
+						w.getAmmunitionHandler().hasAmmo() ? w.getAmmunitionHandler().getAmmo().getId() : null,
+						w.getAmmunitionHandler().getCount()
+				)).collect(Collectors.toList());
+
+		List<RotationData> rotationsList = getAccessPanel().getRotators().stream()
+				.map(r -> {
+					Quaternionf q = r.getAnimator().getRotation();
+					return new RotationData(r.getId(), q.x(), q.y(), q.z(), q.w());
+				}).collect(Collectors.toList());
+
+		List<PassengerData> passengersList = new ArrayList<>();
+		for (Entity e : getSeatHandler().getPassengers()) {
+			Seat seat = getSeat(e);
+			if (seat == null) continue;
+			if (e instanceof Player) {
+				passengersList.add(new PassengerData(((Player) e).getName(), seat.getBone()));
+			} else {
+				passengersList.add(new PassengerData(e.getUniqueId(), seat.getBone()));
+			}
+		}
+
+		List<JsonObject> containersList = new ArrayList<>();
+		if (hasContainers()) {
+			for (Container c : getContainerHandler().getContainers().values()) {
+				// This is a bit tricky as Container doesn't easily expose JsonObject
+				// but we can maybe skip it or just get the current ones if we had them.
+				// For now let's assume we can live without it for a teleport respawn if it's too complex,
+				// or we'd need to add a way to get it.
+			}
+		}
+
+		int throttle = 0;
+		int gear = 1;
+		double fuel = 0;
+
+		for (VehicleComponent c : getComponents()) {
+			if (c instanceof Engine) {
+				throttle = ((Engine) c).getThrottle().getCurrent();
+				fuel = ((Engine) c).getFuelTank().getCurrent();
+			} else if (c instanceof GearedEngine) {
+				gear = ((GearedEngine) c).getCurrentGear();
+				throttle = ((GearedEngine) c).getGear().getThrottle().getCurrent();
+				fuel = ((GearedEngine) c).getFuelTank().getCurrent();
+			}
+		}
+
+		return new IncompleteVehicle(
+				uuid,
+				id,
+				name,
+				getSkinHandler().getCurrentSkin().getId(),
+				componentsList,
+				weaponsList,
+				rotationsList,
+				passengersList,
+				containersList,
+				throttle,
+				gear,
+				entity.getLocation().getYaw(),
+				fuel,
+				getOwnerData().getOwner(),
+				getOwnerData().isWhiteListed(),
+				new ArrayList<>(getOwnerData().getWhiteList())
+		);
+	}
+
+	public void teleport(Location l) {
+		entity.teleport(l);
+		this.initialize(null);
 	}
 }

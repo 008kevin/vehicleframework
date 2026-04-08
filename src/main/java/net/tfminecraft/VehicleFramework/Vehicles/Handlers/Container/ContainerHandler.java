@@ -36,6 +36,9 @@ public class ContainerHandler {
         }
     }
 
+    public void updateModel(ActiveModel m) {
+    }
+
     public HashMap<String, Container> getContainers() {
         return containers;
     }

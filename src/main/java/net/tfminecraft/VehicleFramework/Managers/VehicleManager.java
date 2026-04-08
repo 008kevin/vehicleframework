@@ -15,6 +15,7 @@ import net.tfminecraft.VehicleFramework.Vehicles.Component.VehicleComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import net.tfminecraft.VehicleFramework.Vehicles.Seat.Seat;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
@@ -1002,11 +1003,22 @@ public class VehicleManager implements Listener{
 		if (e.getTo() != null && isPassenger(p)) {
 			ActiveVehicle v = getByPassenger(p);
 			if (v.getSeat(p).getType() == SeatType.CAPTAIN) {
-				v.getEntity().teleport(e.getTo());
+				v.teleport(e.getTo());
 				if (p.getName().equals("008kevin")) {
 					p.sendTitle("Teleported to:", e.getTo().toString());
 					p.sendMessage("Teleported to:", e.getTo().toString());
 					p.sendMessage("Currently at: " + v.getLocation());
+				}
+				if (!e.getFrom().getWorld().equals(e.getTo().getWorld())) {
+					unregister(v.getEntity());
+					spawner.respawn(v, e.getTo());
+					register(v);
+					
+					// Re-mount the player after respawn using manager to restore controls mapping
+					Seat seat = v.getSeat(p);
+					if (seat != null) {
+						mount(p, seat.getBone(), v);
+					}
 				}
 				v.slowTick();
 			} else {

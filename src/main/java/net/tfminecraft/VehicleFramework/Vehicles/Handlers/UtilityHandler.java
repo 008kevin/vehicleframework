@@ -43,6 +43,12 @@ public class UtilityHandler {
 		horn = another.getHorn();
 	}
 	
+	public void updateModel(ActiveModel m) {
+		for(DirectionalLight l : lights) {
+			l.updateModel(m);
+		}
+	}
+
 	public void tick(List<Player> nearby) {
 		for(DirectionalLight l : lights) {
 			l.tick(nearby);
